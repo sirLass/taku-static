@@ -3,22 +3,33 @@ import { v } from 'convex/values'
 
 // Public mutation called anonymously from the waitlist form.
 // The client references it by string path: 'waitlist:submit'.
+// Returns 'joined' | 'email-taken' | 'device-taken'.
 export const submit = mutation({
   args: {
     email: v.string(),
     name: v.optional(v.string()),
     student: v.optional(v.boolean()),
+    ip: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const existing = await ctx.db
+    const emailTaken = await ctx.db
       .query('waitlist')
       .withIndex('by_email', (q) => q.eq('email', args.email))
       .first()
-    if (existing) return 'already-joined'
+    if (emailTaken) return 'email-taken'
+    // One signup per device/IP.
+    if (args.ip) {
+      const deviceTaken = await ctx.db
+        .query('waitlist')
+        .withIndex('by_ip', (q) => q.eq('ip', args.ip))
+        .first()
+      if (deviceTaken) return 'device-taken'
+    }
     await ctx.db.insert('waitlist', {
       email: args.email,
       name: args.name,
       student: args.student,
+      ip: args.ip,
       createdAt: Date.now(),
     })
     return 'joined'

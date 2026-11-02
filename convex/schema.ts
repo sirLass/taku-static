@@ -6,6 +6,7 @@ export default defineSchema({
     email: v.string(),
     name: v.optional(v.string()),
     student: v.optional(v.boolean()),
+    ip: v.optional(v.string()),
     createdAt: v.number(),
-  }).index('by_email', ['email']),
+  }).index('by_email', ['email']).index('by_ip', ['ip']),
 })
